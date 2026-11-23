@@ -5,7 +5,7 @@ import time
 import cv2
 
 from .capture import CameraCapture
-from .gesture import ShushDetector
+from .gesture import GestureDetector
 from .image_processing import composite
 from .states import Visibility, VisibilityController
 from .virtual_camera import VirtualCameraOutput
@@ -44,7 +44,7 @@ class VideoEngine:
     def start_processing(self, virtual_enabled: bool):
         if self.background is None:
             raise RuntimeError("Captura primero el fondo vacío.")
-        self.detector = ShushDetector(self.model_dir)
+        self.detector = GestureDetector(self.model_dir)
         self.virtual_enabled = virtual_enabled
         self.started = True
 

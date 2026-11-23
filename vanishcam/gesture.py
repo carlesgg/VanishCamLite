@@ -6,13 +6,14 @@ import mediapipe as mp
 import numpy as np
 
 
-class ShushDetector:
-    """Detecta índice vertical sobre los labios de una cara visible."""
+class GestureDetector:
+    """Detecta Shush o brazos cruzados durante 600 ms."""
 
     def __init__(self, model_dir: Path):
         hand_path = model_dir / "hand_landmarker.task"
         face_path = model_dir / "face_landmarker.task"
-        missing = [p.name for p in (hand_path, face_path) if not p.is_file()]
+        pose_path = model_dir / "pose_landmarker_lite.task"
+        missing = [p.name for p in (hand_path, face_path, pose_path) if not p.is_file()]
         if missing:
             raise FileNotFoundError(
                 "Faltan modelos locales en models/: " + ", ".join(missing)
@@ -38,6 +39,16 @@ class ShushDetector:
                 min_tracking_confidence=0.5,
             )
         )
+        self.pose = vision.PoseLandmarker.create_from_options(
+            vision.PoseLandmarkerOptions(
+                base_options=mp.tasks.BaseOptions(model_asset_path=str(pose_path)),
+                running_mode=vision.RunningMode.VIDEO,
+                num_poses=1,
+                min_pose_detection_confidence=0.5,
+                min_pose_presence_confidence=0.5,
+                min_tracking_confidence=0.5,
+            )
+        )
         self.started_at = None
         self.last_timestamp_ms = 0
 
@@ -47,9 +58,12 @@ class ShushDetector:
         image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
         timestamp_ms = max(int(now * 1000), self.last_timestamp_ms + 1)
         self.last_timestamp_ms = timestamp_ms
-        hand_result = self.hand.detect_for_video(image, timestamp_ms)
-        face_result = self.face.detect_for_video(image, timestamp_ms)
-        matched = self._matches(hand_result, face_result, frame.shape[1], frame.shape[0])
+        pose_result = self.pose.detect_for_video(image, timestamp_ms)
+        matched = self._arms_crossed(pose_result)
+        if not matched:
+            hand_result = self.hand.detect_for_video(image, timestamp_ms)
+            face_result = self.face.detect_for_video(image, timestamp_ms)
+            matched = self._shush(hand_result, face_result)
         if matched:
             if self.started_at is None:
                 self.started_at = now
@@ -58,7 +72,37 @@ class ShushDetector:
         return False
 
     @staticmethod
-    def _matches(hand_result, face_result, width: int, height: int) -> bool:
+    def _arms_crossed(pose_result) -> bool:
+        if not pose_result.pose_landmarks:
+            return False
+        pose = pose_result.pose_landmarks[0]
+        left_shoulder, right_shoulder = pose[11], pose[12]
+        left_elbow, right_elbow = pose[13], pose[14]
+        left_wrist, right_wrist = pose[15], pose[16]
+        if min(p.visibility for p in (left_shoulder, right_shoulder, left_elbow,
+                                      right_elbow, left_wrist, right_wrist)) < 0.5:
+            return False
+
+        center_x = (left_shoulder.x + right_shoulder.x) / 2
+        shoulder_span = abs(left_shoulder.x - right_shoulder.x)
+        if shoulder_span < 0.08:
+            return False
+        # Each wrist must pass the torso center onto the opposite side of its shoulder.
+        left_crossed = (left_shoulder.x - center_x) * (left_wrist.x - center_x) < 0
+        right_crossed = (right_shoulder.x - center_x) * (right_wrist.x - center_x) < 0
+        wrists_swapped = ((left_shoulder.x - right_shoulder.x) *
+                          (left_wrist.x - right_wrist.x)) < 0
+        margin = shoulder_span * 0.08
+        clear_cross = (abs(left_wrist.x - center_x) > margin and
+                       abs(right_wrist.x - center_x) > margin)
+        shoulder_y = (left_shoulder.y + right_shoulder.y) / 2
+        chest_bottom = shoulder_y + shoulder_span * 1.6
+        chest_level = all(shoulder_y - shoulder_span * 0.15 < wrist.y < chest_bottom
+                          for wrist in (left_wrist, right_wrist))
+        return left_crossed and right_crossed and wrists_swapped and clear_cross and chest_level
+
+    @staticmethod
+    def _shush(hand_result, face_result) -> bool:
         if not hand_result.hand_landmarks or not face_result.face_landmarks:
             return False
         hand = hand_result.hand_landmarks[0]
@@ -93,6 +137,7 @@ class ShushDetector:
     def close(self) -> None:
         self.hand.close()
         self.face.close()
+        self.pose.close()
 
     def reset_hold(self) -> None:
         self.started_at = None

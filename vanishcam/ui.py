@@ -53,7 +53,7 @@ class VanishCamApp:
         self.capture_button.configure(state="disabled")
         self.start_button.configure(state="disabled")
         self.reappear_button.configure(state="normal")
-        self.status.set("VISIBLE — mantén 🤫 durante 600 ms para desaparecer.")
+        self.status.set("VISIBLE — mantén 🤫 o cruza los brazos en X durante 600 ms.")
 
     def reappear(self):
         self.engine.reappear()
@@ -70,7 +70,7 @@ class VanishCamApp:
             self.preview.image = image
             if self.engine.started:
                 text = {
-                    Visibility.VISIBLE: "VISIBLE — gesto 🤫 durante 600 ms para desaparecer.",
+                    Visibility.VISIBLE: "VISIBLE — 🤫 o brazos en X durante 600 ms para desaparecer.",
                     Visibility.DISAPPEARING: "DESAPARECIENDO…",
                     Visibility.INVISIBLE: "INVISIBLE — F8 o Reaparecer para volver.",
                     Visibility.APPEARING: "REAPARECIENDO…",

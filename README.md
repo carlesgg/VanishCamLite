@@ -16,10 +16,11 @@ Manually download the official MediaPipe models and put them in `models\` with t
 
 - [`hand_landmarker.task`](https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task) — Hand Landmarker model.
 - [`face_landmarker.task`](https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task) — Face Landmarker model.
+- [`pose_landmarker_lite.task`](https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task) — Pose Landmarker Lite model, used to detect crossed arms.
 
-The models are data files and are never downloaded or executed by the app. See the MediaPipe guides for [Hand Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker) and [Face Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker).
+The models are data files and are never downloaded or executed by the app. See the MediaPipe guides for [Hand Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker), [Face Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker) and [Pose Landmarker](https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker).
 
-Run `python main.py`. Keep the camera view empty and click **Capture empty background**; then enter the frame and click **Start**. Hold your index finger vertically in front of your lips for 600 ms. The output fades to the background over 500 ms. Landmarkers are skipped in the INVISIBLE state. Press F8 or click **Reappear** to return.
+Run `python main.py`. Keep the camera view empty and click **Capture empty background**; then enter the frame and click **Start**. Hold either the Shush gesture (index finger vertically in front of your lips) or cross your arms into an X for 600 ms. The output fades to the background over 500 ms. Landmarkers are skipped in the INVISIBLE state. Press F8 or click **Reappear** to return.
 
 ## Virtual camera and Teams
 
@@ -30,6 +31,6 @@ OBS and the dependencies are installed manually. While running, VanishCam Lite o
 ## MVP limitations
 
 - Uses Windows camera device index 0, at 640×480 when supported by the driver.
-- Detection requires both a visible face and hand. The geometric gesture rule is intentionally simple and may need good lighting, distance and framing adjustments.
+- Shush detection requires a visible face and hand; the X gesture requires visible shoulders, elbows and wrists. The geometric rules are intentionally simple and may need good lighting, distance and framing adjustments.
 - The background is captured as-is; keep the camera still and the background clear of people.
 - Windows virtual camera output requires the OBS device to be installed. The app does not install drivers.
