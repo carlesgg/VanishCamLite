@@ -4,10 +4,10 @@ A local Windows app that replaces the webcam image with a captured background wh
 
 ## Setup
 
-Requires 64-bit Python 3.11. From this folder, create an environment and install the pinned versions manually:
+Requires 64-bit Python 3.12. From this folder, create an environment and install the pinned versions manually:
 
 ```powershell
-py -3.11 -m venv .venv
+py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 ```
